@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>👥 User Management</h1>
+            <nav>
+                <a href="../index.html">Home</a>
+                <a href="users.html">Users</a>
+                <a href="cars.html">Cars</a>
+            </nav>
+        </header>
+
+        <!-- Alert Messages -->
+        <div id="alert" class="alert"></div>
+
+        <!-- Add/Edit User Form -->
+        <section class="form-section">
+            <h2 id="formTitle">Add New User</h2>
+            <form id="userForm">
+                <div class="form-group">
+                    <label for="userName">Name *</label>
+                    <input type="text" id="userName" placeholder="Enter user name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="userEmail">Email (Optional)</label>
+                    <input type="email" id="userEmail" placeholder="Enter user email">
+                </div>
+
+                <div>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Add User</button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Users Table -->
+        <section class="table-section">
+            <h2>All Users</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <tr>
+                        <td colspan="5" style="text-align: center;">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <!-- Load scripts in order -->
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/users.js"></script>
+</body>
+</html>
