@@ -1,0 +1,9 @@
+# API/.dockerignore
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+README.md
+database.sqlite
+.DS_Store
