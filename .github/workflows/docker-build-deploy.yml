@@ -22,6 +22,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Debug - Show files
+        run: |
+          echo "📁 Current directory: $(pwd)"
+          echo "\n📁 Files in root:"
+          ls -la
+          echo "\n📁 Src directory contents:"
+          ls -la src/ || echo "src directory not found"
+          echo "\n🔍 Looking for Dockerfile:"
+          if [ -f "Dockerfile" ]; then
+            echo "✅ Dockerfile found in root"
+            cat Dockerfile | head -5
+          else
+            echo "❌ Dockerfile NOT found"
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -46,11 +61,11 @@ jobs:
         id: push
         uses: docker/build-push-action@v6
         with:
-          context: ./API
-          file: ./API/Dockerfile
+          context: .  # Use current directory (root) as context
+          file: ./Dockerfile  # Dockerfile is in root
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          labels: $ steps.meta.outputs.labels }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -61,7 +76,8 @@ jobs:
           script: |
             const imageName = '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}';
             const prTag = 'pr-${{ github.event.pull_request.number }}';
-            const body = `✅ Docker image built and published!\n\nPull command:\n\`\`\`\ndocker pull ${imageName}:${prTag}\n\`\`\`\n\nDeploying to EC2 for testing...`;
+            const shaTag = '${{ github.sha }}'.substring(0, 7);
+            const body = `✅ Docker image built and published!\n\n**Image tags:**\n- \`${imageName}:${prTag}\` (PR-specific)\n- \`${imageName}:${shaTag}\` (commit-specific)\n\nPull command:\n\`\`\`bash\ndocker pull ${imageName}:${prTag}\n\`\`\`\n\nDeploying to EC2 for testing...`;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -97,6 +113,8 @@ jobs:
             
             FULL_IMAGE="${IMAGE_NAME}:${TAG}"
             
+            echo "📦 Pulling image: $FULL_IMAGE"
+            
             # Login to GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
@@ -107,16 +125,23 @@ jobs:
             docker stop rest-api || true
             docker rm rest-api || true
             
-            # Create .env file
+            # Create application directory
             mkdir -p ~/rest_api
             cd ~/rest_api
             
+            # Create .env file with API key
             cat > .env << EOF
             PORT=3000
             NODE_ENV=production
             DATABASE_URL=./database.sqlite
             API_KEY=${{ secrets.API_KEY }}
+            JWT_SECRET=your-jwt-secret-key-change-this
+            JWT_EXPIRES_IN=24h
             EOF
+            
+            # Initialize database file if not exists
+            touch database.sqlite
+            chmod 666 database.sqlite
             
             # Run new container
             docker run -d \
@@ -127,11 +152,21 @@ jobs:
               -v ~/rest_api/database.sqlite:/usr/src/app/database.sqlite \
               $FULL_IMAGE
             
+            # Wait for container to start
+            sleep 5
+            
             # Check if running
             if docker ps | grep -q rest-api; then
               echo "✅ Deployment successful!"
+              echo "📋 Container logs:"
+              docker logs --tail 20 rest-api
+              
+              # Test the endpoint
+              echo "\n🔍 Testing health endpoint:"
+              curl -f http://localhost:3000/api/health || echo "⚠️ Health check failed - container might still be initializing"
             else
               echo "❌ Deployment failed"
+              echo "📋 Container logs:"
               docker logs rest-api
               exit 1
             fi
@@ -142,7 +177,7 @@ jobs:
         with:
           script: |
             const ec2Host = '${{ secrets.EC2_HOST }}';
-            const body = `🚀 **PR deployed to EC2 test environment!**\n\nAccess your application at: http://${ec2Host}\n\n*This is a temporary deployment for testing PR #${{ github.event.pull_request.number }}.*`;
+            const body = `🚀 **PR deployed to EC2 test environment!**\n\nAccess your application at: http://${ec2Host}\n\n**Endpoints:**\n- Frontend: http://${ec2Host}\n- API Health: http://${ec2Host}/api/health\n- API Docs: http://${ec2Host}/api\n- Users API: http://${ec2Host}/api/users (requires API key)\n\n*This is a temporary deployment for testing PR #${{ github.event.pull_request.number }}.*`;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,

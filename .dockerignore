@@ -1,4 +1,4 @@
-# API/.dockerignore
+# .dockerignore
 node_modules
 npm-debug.log
 .env
@@ -7,3 +7,5 @@ npm-debug.log
 README.md
 database.sqlite
 .DS_Store
+*.pem
+*.log

@@ -1,4 +1,4 @@
-# API/Dockerfile
+# Dockerfile
 FROM node:18-alpine
 
 WORKDIR /usr/src/app
@@ -17,6 +17,8 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 -G nodejs
 USER nodejs
 
+# Expose the port
 EXPOSE 3000
 
+# Start the application
 CMD ["node", "src/index.js"]
