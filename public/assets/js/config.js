@@ -1,6 +1,6 @@
 // public/assets/js/config.js
-window.config = {
-    API_KEY: 'test-api-my-key-2026',  // Must match Render's env var
+const API_CONFIG = {
+    API_KEY: 'test-api-my-key-2026',  // Put your actual API key here
     API_BASE_URL: window.location.origin,
     ENDPOINTS: {
         USERS: '/api/users',
@@ -8,4 +8,13 @@ window.config = {
         HEALTH: '/api/health'
     }
 };
-console.log('Config loaded with API key:', window.config.API_KEY);
+
+// Also make it available globally
+window.API_CONFIG = API_CONFIG;
+
+console.log('✅ API_CONFIG loaded with key:', API_CONFIG.API_KEY);
+
+// For module exports
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = API_CONFIG;
+}
