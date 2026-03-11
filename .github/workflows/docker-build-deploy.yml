@@ -1,4 +1,4 @@
-name: Docker Build, Publish and Deploy to EC2
+name: Docker Build, Publish and Deploy to Render
 
 on:
   pull_request:
@@ -22,21 +22,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Debug - Show files
-        run: |
-          echo "📁 Current directory: $(pwd)"
-          echo "\n📁 Files in root:"
-          ls -la
-          echo "\n📁 Src directory contents:"
-          ls -la src/ || echo "src directory not found"
-          echo "\n🔍 Looking for Dockerfile:"
-          if [ -f "Dockerfile" ]; then
-            echo "✅ Dockerfile found in root"
-            cat Dockerfile | head -5
-          else
-            echo "❌ Dockerfile NOT found"
-          fi
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -58,126 +43,44 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
-        id: push
         uses: docker/build-push-action@v6
         with:
-          context: .  # Use current directory (root) as context
-          file: ./Dockerfile  # Dockerfile is in root
+          context: .
+          file: ./Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Comment PR with image tag
+      - name: Comment PR with image details
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
             const imageName = '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}';
             const prTag = 'pr-${{ github.event.pull_request.number }}';
-            const shaTag = '${{ github.sha }}'.substring(0, 7);
-            const body = `✅ Docker image built and published!\n\n**Image tags:**\n- \`${imageName}:${prTag}\` (PR-specific)\n- \`${imageName}:${shaTag}\` (commit-specific)\n\nPull command:\n\`\`\`bash\ndocker pull ${imageName}:${prTag}\n\`\`\`\n\nDeploying to EC2 for testing...`;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: body
-            });
-
-  deploy-to-ec2:
-    runs-on: ubuntu-latest
-    needs: build-and-publish
-    if: success() && (github.event_name == 'push' || (github.event_name == 'pull_request' && github.base_ref == 'main'))
-
-    steps:
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            # Set variables
-            IMAGE_NAME="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-            PR_NUMBER="${{ github.event.pull_request.number }}"
+            const body = `## ✅ Docker Image Built Successfully!
             
-            # Determine which tag to use
-            if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
-              TAG="pr-$PR_NUMBER"
-              echo "🚀 Deploying PR #$PR_NUMBER for testing"
-            else
-              TAG="latest"
-              echo "🚀 Deploying latest main branch to production"
-            fi
+            **Image Details:**
+            - 📦 Repository: \`${imageName}\`
+            - 🏷️ Tag: \`${prTag}\`
             
-            FULL_IMAGE="${IMAGE_NAME}:${TAG}"
+            **Pull Command:**
+            \`\`\`bash
+            docker pull ${imageName}:${prTag}
+            \`\`\`
             
-            echo "📦 Pulling image: $FULL_IMAGE"
+            **Next Steps:**
+            1. Merge this PR to deploy to Render
+            2. Your app will be live at: https://rest-api.onrender.com
             
-            # Login to GHCR
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            **Your API Endpoints:**
+            - Frontend: https://rest-api.onrender.com
+            - Health Check: https://rest-api.onrender.com/api/health
+            - API Docs: https://rest-api.onrender.com/api
+            - Users API: https://rest-api.onrender.com/api/users (requires API key)`;
             
-            # Pull the image
-            docker pull $FULL_IMAGE
-            
-            # Stop and remove old container
-            docker stop rest-api || true
-            docker rm rest-api || true
-            
-            # Create application directory
-            mkdir -p ~/rest_api
-            cd ~/rest_api
-            
-            # Create .env file with API key
-            cat > .env << EOF
-            PORT=3000
-            NODE_ENV=production
-            DATABASE_URL=./database.sqlite
-            API_KEY=${{ secrets.API_KEY }}
-            JWT_SECRET=your-jwt-secret-key-change-this
-            JWT_EXPIRES_IN=24h
-            EOF
-            
-            # Initialize database file if not exists
-            touch database.sqlite
-            chmod 666 database.sqlite
-            
-            # Run new container
-            docker run -d \
-              --name rest-api \
-              --restart unless-stopped \
-              -p 80:3000 \
-              -v ~/rest_api/.env:/usr/src/app/.env \
-              -v ~/rest_api/database.sqlite:/usr/src/app/database.sqlite \
-              $FULL_IMAGE
-            
-            # Wait for container to start
-            sleep 5
-            
-            # Check if running
-            if docker ps | grep -q rest-api; then
-              echo "✅ Deployment successful!"
-              echo "📋 Container logs:"
-              docker logs --tail 20 rest-api
-              
-              # Test the endpoint
-              echo "\n🔍 Testing health endpoint:"
-              curl -f http://localhost:3000/api/health || echo "⚠️ Health check failed - container might still be initializing"
-            else
-              echo "❌ Deployment failed"
-              echo "📋 Container logs:"
-              docker logs rest-api
-              exit 1
-            fi
-
-      - name: Comment PR with deployment URL
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const ec2Host = '${{ secrets.EC2_HOST }}';
-            const body = `🚀 **PR deployed to EC2 test environment!**\n\nAccess your application at: http://${ec2Host}\n\n**Endpoints:**\n- Frontend: http://${ec2Host}\n- API Health: http://${ec2Host}/api/health\n- API Docs: http://${ec2Host}/api\n- Users API: http://${ec2Host}/api/users (requires API key)\n\n*This is a temporary deployment for testing PR #${{ github.event.pull_request.number }}.*`;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,

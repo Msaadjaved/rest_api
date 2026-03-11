@@ -1,0 +1,23 @@
+# render.yaml
+services:
+  - type: web
+    name: rest-api
+    runtime: docker
+    repo: https://github.com/Msaadjaved/rest_api
+    branch: main
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      - key: API_KEY
+        sync: false  # You'll set this manually in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 24h
+    healthCheckPath: /api/health
+    autoDeploy: true
