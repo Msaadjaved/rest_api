@@ -1,8 +1,11 @@
-// API Configuration
-const API_CONFIG = {
-    baseURL: '/api', // Using relative path since frontend is served from same server
-    apiKey: 'my-test-api-key' // Your API key from .env
+// public/assets/js/config.js
+window.config = {
+    API_KEY: 'test-api-my-key-2026',  // Must match Render's env var
+    API_BASE_URL: window.location.origin,
+    ENDPOINTS: {
+        USERS: '/api/users',
+        CARS: '/api/cars',
+        HEALTH: '/api/health'
+    }
 };
-
-// Export for use in other files
-window.API_CONFIG = API_CONFIG;
+console.log('Config loaded with API key:', window.config.API_KEY);
