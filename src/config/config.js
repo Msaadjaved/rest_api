@@ -18,8 +18,8 @@ const config = {
   port: process.env.PORT || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
   databaseUrl: process.env.DATABASE_URL || databasePath,
-  apiKey: process.env.API_KEY || 'my-test-api-key',
-  jwtSecret: process.env.JWT_SECRET || 'your-jwt-secret-key',
+  apiKey: process.env.API_KEY || 'test-api-my-key-2026',
+  jwtSecret: process.env.JWT_SECRET || '2O9CSwNH/k8P/WMyACwjXYU7oKMx0afqXHBC1DnaUn0=',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h',
   
   // Helper methods

@@ -14,11 +14,11 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        value: /usr/src/app/data/database.sqlite  # Explicitly set the writable path
+        value: /usr/src/app/data/database.sqlite
       - key: API_KEY
-        sync: false  # You'll set this manually
+        sync: false  # Set manually in dashboard
       - key: JWT_SECRET
-        generateValue: true
+        generateValue: true  # Let Render generate a secure one
       - key: JWT_EXPIRES_IN
         value: 24h
     healthCheckPath: /api/health
