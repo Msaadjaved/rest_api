@@ -12,10 +12,13 @@ RUN npm ci --only=production
 # Copy application source
 COPY . .
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 -G nodejs
-USER nodejs
+# IMPORTANT: Create data directory for SQLite with proper permissions
+RUN mkdir -p /usr/src/app/data && \
+    chown -R node:node /usr/src/app/data && \
+    chmod 755 /usr/src/app/data
+
+# Switch to non-root user
+USER node
 
 # Expose the port
 EXPOSE 3000

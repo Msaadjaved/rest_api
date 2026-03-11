@@ -13,8 +13,10 @@ services:
         value: 3000
       - key: NODE_ENV
         value: production
+      - key: DATABASE_URL
+        value: /usr/src/app/data/database.sqlite  # Explicitly set the writable path
       - key: API_KEY
-        sync: false  # You'll set this manually in Render dashboard
+        sync: false  # You'll set this manually
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
