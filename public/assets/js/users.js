@@ -4,7 +4,7 @@ let currentEditId = null;
 // Load all users and display them
 async function loadUsers() {
     try {
-        const users = await API.get('/users');
+        const users = await API.get('/api/users');
         displayUsers(users);
     } catch (error) {
         showError('Failed to load users: ' + error.message);
@@ -54,12 +54,12 @@ async function handleUserSubmit(event) {
     try {
         if (currentEditId) {
             // Update existing user
-            await API.put(`/users/${currentEditId}`, userData);
+            await API.put(`/api/users/${currentEditId}`, userData);
             showSuccess('User updated successfully!');
             cancelEdit();
         } else {
             // Create new user
-            await API.post('/users', userData);
+            await API.post('/api/users', userData);
             showSuccess('User created successfully!');
             document.getElementById('userForm').reset();
         }
@@ -73,7 +73,7 @@ async function handleUserSubmit(event) {
 // Edit user
 async function editUser(id) {
     try {
-        const user = await API.get(`/users/${id}`);
+        const user = await API.get(`/api/users/${id}`);
         
         document.getElementById('userName').value = user.name;
         document.getElementById('userEmail').value = user.email || '';
@@ -106,7 +106,7 @@ async function deleteUser(id) {
     }
 
     try {
-        await API.delete(`/users/${id}`);
+        await API.delete(`/api/users/${id}`);
         showSuccess('User deleted successfully!');
         loadUsers();
     } catch (error) {

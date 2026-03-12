@@ -4,7 +4,7 @@ let currentEditId = null;
 // Load all cars and display them
 async function loadCars() {
     try {
-        const cars = await API.get('/cars');
+        const cars = await API.get('/api/cars');
         displayCars(cars);
     } catch (error) {
         showError('Failed to load cars: ' + error.message);
@@ -65,12 +65,12 @@ async function handleCarSubmit(event) {
     try {
         if (currentEditId) {
             // Update existing car
-            await API.put(`/cars/${currentEditId}`, carData);
+            await API.put(`/api/cars/${currentEditId}`, carData);
             showSuccess('Car updated successfully!');
             cancelEdit();
         } else {
             // Create new car
-            await API.post('/cars', carData);
+            await API.post('/api/cars', carData);
             showSuccess('Car created successfully!');
             document.getElementById('carForm').reset();
         }
@@ -84,7 +84,7 @@ async function handleCarSubmit(event) {
 // Edit car
 async function editCar(id) {
     try {
-        const car = await API.get(`/cars/${id}`);
+        const car = await API.get(`/api/cars/${id}`);
         
         document.getElementById('carMake').value = car.make;
         document.getElementById('carModel').value = car.model;
@@ -121,7 +121,7 @@ async function deleteCar(id) {
     }
 
     try {
-        await API.delete(`/cars/${id}`);
+        await API.delete(`/api/cars/${id}`);
         showSuccess('Car deleted successfully!');
         loadCars();
     } catch (error) {

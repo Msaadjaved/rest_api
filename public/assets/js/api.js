@@ -2,25 +2,25 @@
 const API = {
     /**
      * Make an API request
-     * @param {string} endpoint - API endpoint (e.g., '/users' or '/users/1')
+     * @param {string} endpoint - API endpoint (e.g., '/api/users')
      * @param {object} options - Fetch options (method, body, etc.)
      * @returns {Promise} - Response data or error
      */
     async request(endpoint, options = {}) {
-        const url = `${API_CONFIG.baseURL}${endpoint}`;
-        
+        const url = `${API_CONFIG.API_BASE_URL}${endpoint}`;  // FIXED: was API_CONFIG.baseURL
+
         const config = {
             ...options,
             headers: {
                 'Content-Type': 'application/json',
-                'X-API-Key': API_CONFIG.apiKey,
+                'X-API-Key': API_CONFIG.API_KEY,              // FIXED: was API_CONFIG.apiKey
                 ...options.headers
             }
         };
 
         try {
             const response = await fetch(url, config);
-            
+
             // Handle 204 No Content (successful delete)
             if (response.status === 204) {
                 return { success: true };
